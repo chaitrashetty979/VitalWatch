@@ -1,38 +1,65 @@
+
 from datetime import datetime
+
+# Store patient information while the program is running
 patients = {}
 vitals = {}
 alerts = {}
+
+
+# 1. DISPLAY MAIN MENU
 def show_menu():
-    print("\n===== VITALWATCH SYSTEM =====")
+    print("\n========== VITALWATCH SYSTEM ==========")
     print("1. Add Patient")
     print("2. Record Patient Vitals")
     print("3. View Patient Trend")
     print("4. View Active Alerts")
     print("5. Print Shift Handover Summary")
     print("6. Exit")
+    print("=======================================")
+
+
+# 2. ADD NEW PATIENT
 def add_patient():
     print("\n--- ADD NEW PATIENT ---")
 
     patient_id = input("Enter Patient ID: ").strip().upper()
 
+    if not patient_id:
+        print("Patient ID cannot be empty!")
+        return
+
     if patient_id in patients:
         print("Patient ID already exists!")
         return
 
-    name = input("Enter Patient Name: ")
+    name = input("Enter Patient Name: ").strip()
 
-    age = input("Enter Patient Age: ")
+    if not name:
+        print("Patient name cannot be empty!")
+        return
+
+    age = input("Enter Patient Age: ").strip()
 
     if not age.isdigit() or int(age) <= 0:
         print("Please enter a valid age!")
         return
-    ward = input("Enter Ward Number: ")
+
+    ward = input("Enter Ward Number: ").strip()
+
     patients[patient_id] = {
         "name": name,
         "age": int(age),
         "ward": ward
     }
-    print("Patient added successfully!")
+
+    vitals[patient_id] = []
+    alerts[patient_id] = []
+
+    print("\nPatient added successfully!")
+
+
+# 3. RECORD PATIENT VITALS
 def record_vitals():
     print("\n--- RECORD PATIENT VITALS ---")
 
@@ -43,13 +70,15 @@ def record_vitals():
         return
 
     try:
-        bp = input("Enter Blood Pressure (e.g. 120/80): ")
+        bp = input("Enter Blood Pressure (e.g. 120/80): ").strip()
+
         systolic, diastolic = map(int, bp.split("/"))
 
         pulse = int(input("Enter Pulse Rate: "))
         temperature = float(input("Enter Temperature: "))
         spo2 = int(input("Enter Oxygen Saturation: "))
 
+        # Validate input values
         if not (40 <= systolic <= 250 and 20 <= diastolic <= 150):
             print("Invalid blood pressure input!")
             return
@@ -66,6 +95,7 @@ def record_vitals():
             print("Invalid oxygen saturation input!")
             return
 
+        # Store vital readings
         reading = {
             "blood_pressure": bp,
             "systolic": systolic,
@@ -76,31 +106,41 @@ def record_vitals():
             "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         }
 
-        if patient_id not in vitals:
-            vitals[patient_id] = []
-
-        vitals[patient_id].append(reading)
+        # Generate educational example alerts
         patient_alerts = []
 
         if systolic < 90 or systolic > 140 or diastolic < 60 or diastolic > 90:
-            patient_alerts.append("Blood pressure outside example range")
+            patient_alerts.append(
+                "Blood pressure outside example range"
+            )
 
         if pulse < 60 or pulse > 100:
-            patient_alerts.append("Pulse outside example range")
+            patient_alerts.append(
+                "Pulse outside example range"
+            )
 
         if temperature < 36.0 or temperature > 38.0:
-            patient_alerts.append("Temperature outside example range")
+            patient_alerts.append(
+                "Temperature outside example range"
+            )
 
         if spo2 < 95:
-            patient_alerts.append("Oxygen saturation below example threshold")
+            patient_alerts.append(
+                "Oxygen saturation below example threshold"
+            )
 
-        alerts[patient_id] = patient_alerts
+        # Attach alerts to this reading
         reading["alerts"] = patient_alerts
 
-        print("\nVital readings saved successfully!")
+        # Save reading in memory
+        vitals[patient_id].append(reading)
+        alerts[patient_id] = patient_alerts
+
+        print("\nVital readings recorded successfully!")
 
         if patient_alerts:
-            print("WARNING: Educational alert generated!")
+            print("\nWARNING: Educational alerts generated!")
+
             for alert in patient_alerts:
                 print("-", alert)
         else:
@@ -109,7 +149,11 @@ def record_vitals():
     except ValueError:
         print("Invalid input! Check your values and BP format.")
 
+
+# 4. VIEW PATIENT TREND
 def view_patient_trend():
+    print("\n--- PATIENT VITAL TREND ---")
+
     pid = input("Enter Patient ID: ").strip().upper()
 
     if pid not in patients:
@@ -126,27 +170,41 @@ def view_patient_trend():
 
     for i, r in enumerate(last_three, 1):
         print(f"\nReading {i}: {r['time']}")
-        print(f"BP: {r['blood_pressure']} | Pulse: {r['pulse']}")
-        print(f"Temperature: {r['temperature']} | SpO2: {r['spo2']}")
+        print(f"BP: {r['blood_pressure']}")
+        print(f"Pulse: {r['pulse']}")
+        print(f"Temperature: {r['temperature']}")
+        print(f"SpO2: {r['spo2']}")
         print("Alerts:", len(r.get("alerts", [])))
 
-    counts = [len(r.get("alerts", [])) for r in last_three]
+    # Compare alert counts
+    counts = [
+        len(r.get("alerts", []))
+        for r in last_three
+    ]
 
     if counts[2] < counts[0]:
         print("\nTrend: IMPROVING")
+
     elif counts[2] > counts[0]:
         print("\nTrend: WORSENING")
+
     else:
         print("\nTrend: STABLE")
 
+    print("\nNote: This is a simplified educational trend based on alert counts.")
+
+
+# 5. VIEW ACTIVE ALERTS
 def view_active_alerts():
     print("\n--- ACTIVE PATIENT ALERTS ---")
 
     found = False
 
     for pid, patient_alerts in alerts.items():
+
         if patient_alerts:
             found = True
+
             patient = patients[pid]
 
             print("\nPatient ID:", pid)
@@ -159,6 +217,8 @@ def view_active_alerts():
     if not found:
         print("No active alerts!")
 
+
+# 6. SHIFT HANDOVER SUMMARY
 def shift_handover_summary():
     print("\n========== SHIFT HANDOVER SUMMARY ==========")
 
@@ -167,6 +227,7 @@ def shift_handover_summary():
         return
 
     for pid, patient in patients.items():
+
         print("\n--------------------------------")
         print("Patient ID:", pid)
         print("Name:", patient["name"])
@@ -189,8 +250,10 @@ def shift_handover_summary():
 
             if patient_alerts:
                 print("\nActive Alerts:")
+
                 for alert in patient_alerts:
                     print("WARNING:", alert)
+
             else:
                 print("\nNo active alerts.")
 
@@ -199,21 +262,32 @@ def shift_handover_summary():
 
     print("\n========== END OF SUMMARY ==========")
 
+
+# 7. MAIN PROGRAM
 while True:
+
     show_menu()
-    choice = input("Enter your choice (1-6): ")
+
+    choice = input("Enter your choice (1-6): ").strip()
+
     if choice == "1":
         add_patient()
+
     elif choice == "2":
         record_vitals()
+
     elif choice == "3":
         view_patient_trend()
+
     elif choice == "4":
         view_active_alerts()
+
     elif choice == "5":
         shift_handover_summary()
+
     elif choice == "6":
-        print("Thank you for using VitalWatch!")
+        print("\nThank you for using VitalWatch!")
         break
+
     else:
-        print("Invalid choice! Please enter a number from 1 to 6.")
+        print("Invalid choice! Please enter a number between 1 and 6.")
